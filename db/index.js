@@ -99,6 +99,7 @@ async function createPost({
     throw error;
   }
 }
+
 async function createTags(tagList) {
   if (tagList.length === 0) {
     return;
@@ -301,6 +302,36 @@ async function getPostsByTagName(tagName) {
   }
 }
 
+async function getAllTags() {
+  try {
+    const { rows } = await client.query
+      //1. SELECT is a clause that indicates that the statement is a query. 
+      //You will use SELECT every time you query data from a database. 
+      //2. name specifies the column to query data from. 
+      //3. FROM users specifies the name of the table to query data from. 
+      //In this statement, data is queried from the users table. 
+
+      (`SELECT * FROM tags;`);
+
+    return rows;
+  } catch (error) {
+    throw error
+  }
+}
+
+async function getUserByUsername(username){
+  try {
+    const { rows: [user] } = await client.query(`
+    SELECT *
+    FROM users
+    WHERE username=$1;
+    `,[username]);
+
+    return user;
+  }catch(error){
+    throw error;
+  }
+}
 
 module.exports = {
   client,
@@ -316,7 +347,9 @@ module.exports = {
   createPostTag,
   addTagsToPost,
   getPostById,
-  getPostsByTagName
+  getPostsByTagName,
+  getAllTags,
+  getUserByUsername
 }
 
 

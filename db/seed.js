@@ -13,7 +13,8 @@ const {
     createPostTag,
     addTagsToPost,
     getPostById,
-    getPostsByTagName
+    getPostsByTagName,
+    getAllTags
 } = require('./index');
 
 
@@ -21,7 +22,8 @@ const {
 async function dropTables() {
     try {
         console.log("Starting to drop tables...");
-
+        //post_tags has foreign keys to the posts table and tags table so you must delete this table first
+        //posts has foreign keys to the users table so this has to be deleted before users table
         await client.query(`
         DROP TABLE IF EXISTS post_tags;
         DROP TABLE IF EXISTS tags;

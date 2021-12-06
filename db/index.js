@@ -1,5 +1,4 @@
 const { Client } = require('pg');
-
 const client = new Client('postgres://localhost:5432/juicebox-dev');
 
 async function createUser({ username, password, name, location }) {
@@ -85,7 +84,7 @@ async function createPost({
   authorId,
   title,
   content,
-  tags = []
+  tags = []//destructure from postData from posts.js
 }) {
   try {
     const { rows: [post] } = await client.query
@@ -173,6 +172,13 @@ async function getPostById(postId) {
       WHERE id=$1;
     `, [postId]);
 
+    if (!post) {
+      throw {
+        name: "PostNotFoundError",
+        message: "Could not find a post with that postId"
+      };
+    }
+
     const { rows: tags } = await client.query(`
       SELECT tags.*
       FROM tags
@@ -181,7 +187,7 @@ async function getPostById(postId) {
     `, [postId])
 
     const { rows: [author] } = await client.query(`
-      SELECT id, username, name, location
+      SELECT id, username, name, location, active
       FROM users
       WHERE id=$1;
     `, [post.authorId])

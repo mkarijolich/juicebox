@@ -5,13 +5,13 @@ const { JWT_SECRET } = process.env;
 const express = require('express');
 const apiRouter = express.Router();
 
-apiRouter.use(async (req,res,next)=> {
+apiRouter.use(async (req,res,next)=> {// authentication func
     const prefix = 'Bearer ';
-    const auth = req.header('Authorization');
+    const auth = req.header('Authorization');//checking user logged in 
 
-    if(!auth) {//IF: The Authorization header wasn't set.
-        //we can not set a user if their data isn't passed to us.
-        next();
+    if(!auth) {//IF: The Authorization header wasn't set -- user not logged in
+        
+        next();// go next middleware
     }else if(auth.startsWith(prefix)){//ELSE IF: It was set, and begins with Bearer followed by a space
         const token = auth.slice(prefix.length);//recover the token
 
@@ -33,7 +33,7 @@ apiRouter.use(async (req,res,next)=> {
     }
 });
 
-apiRouter.use((req,res,next) => {
+apiRouter.use((req,res,next) => {// We can consider users to be logged in when req.user is set in all of our routes.
     if(req.user) {
         console.log("User is set:" , req.user);
     }

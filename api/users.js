@@ -1,9 +1,9 @@
 const express = require('express');
 const usersRouter = express.Router();
-
 const jwt = require('jsonwebtoken');
 
-const { getAllUsers, getUserByUsername, createUser } = require('../db');
+const { getAllUsers, getUserByUsername, createUser, getUserById, updateUser} = require('../db');
+const { requireActiveUser } = require('./utils');
 
 usersRouter.use((req,res,next) => {
     console.log("A request is being made to /users");
@@ -12,17 +12,17 @@ usersRouter.use((req,res,next) => {
 });
 
 
-usersRouter.get('/', async (req,res) => {//That middleware will fire whenever a GET request is made to /api/users
+usersRouter.get('/', async (req,res) => {//That endpoint will fire whenever a GET request is made to /api/users
     
     const users = await getAllUsers();
 
-    res.send({
+    res.send({ //store users to res.body{}
         users
     });
 });
 
 usersRouter.post('/login', async(req,res,next) => {
-    const { username, password } = req.body;
+    const { username, password } = req.body; // destructure username and password from req.body{}
 
     if(!username || !password){//request must have both
         next({
@@ -32,17 +32,17 @@ usersRouter.post('/login', async(req,res,next) => {
     }
 
     try {
-        const user = await getUserByUsername(username);
+        const user = await getUserByUsername(username);//pass username(req.body) to getUserByUsername and call the func
 
-        if( user && user.password === password) {
+        if( user && user.password === password) {//verify user && user.password from getUserByUsername and password from req.body
             //create token & return to user
-            const userData = {
+            const userData = { // create userData obj and store id and username from line 35
                 id: user.id,
                 username: user.username
             };
-            const token = jwt.sign(userData, process.env.JWT_SECRET)
+            const token = jwt.sign(userData, process.env.JWT_SECRET) 
 
-            res.send({ 
+            res.send({ // set message and token res {} and send back
                 message: "you are logged in",
                 token:token
                 });
@@ -59,19 +59,19 @@ usersRouter.post('/login', async(req,res,next) => {
 });
 
 usersRouter.post('/register', async(req,res,next) => {
-    const { username, password, name, location } = req.body;
+    const { username, password, name, location } = req.body;//destructure and get them from req.body{}
 
     try {
         const _user = await getUserByUsername(username);
 
-        if(_user) {
+        if(_user) {//if _user already exists, will display message
             next({
                 name: 'UserExistsError',
                 message: 'A user by that username already exists'
             });
         }
 
-        const user = await createUser({
+        const user = await createUser({//if _user doesn't exists,do below
             username,
             password,
             name,
@@ -93,6 +93,37 @@ usersRouter.post('/register', async(req,res,next) => {
         next({ name, message })
     }
 });
+
+usersRouter.delete('/:userId', requireActiveUser, async (req, res, next) => {
+    try {
+      const user = await getUserById(req.params.userId);
+  
+      if (user && user.id === req.user.id) {
+        const updatedUser = await updateUser(user.id, { active: false });
+  
+        res.send({ post: updatedUser });
+      } else {
+        
+        next(user ? { 
+          name: "UnauthorizedUserError",
+          message: "You cannot delete a user which is not yours"
+        } : {
+          name: "UserNotFoundError",
+          message: "That user does not exist"
+        });
+      }
+  
+    } catch ({ name, message }) {
+      next({ name, message })
+    }
+  });
+
+
+
+
+
+
+
 
 
 module.exports = usersRouter;
